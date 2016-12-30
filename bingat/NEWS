@@ -1,0 +1,47 @@
+CHANGES IN bingat VERSION 1.3
+
+CHANGES
+
+* Added as.vector to the ga function -- update this later
+
+
+
+CHANGES IN bingat VERSION 1.2
+
+CHANGES
+
+* Removed the cutoff parameter from all G Star calculations because it must be done at 50% for the math to be correct.
+
+* Removed the PBMethod parameter from glrtPvalue 
+ 
+* Change bootstraps to the number of permutations in the glrtPvalue function so it is consistant with the functionality.
+
+* Added a function for paired data p-value test pairedPvalue
+
+* Added numSims to testGoF for the chi squared test
+
+* Added a function to plot the data on an MDS plot
+
+* Added a function to plot the data as a heatmap
+
+* Added a function to compute a p value using a LRT method
+
+* Added a function that uses a genetic algorthim to find differences in groups
+
+
+
+CHANGES IN bingat VERSION 1.1
+
+CHANGES
+
+* Made glrtReg and glmReg functions internal since they should only be called from the glrtPvalue function. 
+
+* Change the initial clustering in the getGibbsMixture from pam to random sampling.
+
+
+BUG FIXES
+
+* Fixed a bug in getGibbsMixture and getLoglikeMixture where large graphs would cause errors or 0 to return.
+
+* Fixed a bug in glrtPvalue where the tau and gstar weren't being computed correctly in some instances.
+
