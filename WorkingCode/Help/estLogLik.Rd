@@ -4,13 +4,14 @@
 
 \description{This function estimates log likelihood value for a given graph.}
 
-\usage{estLogLik(data, type, g, tau)}
+\usage{estLogLik(data, type, gstar, tau, g = NULL)}
 
 \arguments{
   \item{data}{A data frame in which the columns (subjects) contain a 0/1 value for row (Node or Edge).}
   \item{type}{The type of graph being used (adjmatrix or adjmatrixlt).}
-  \item{g}{A single columned data frame to estimate the likelihood for.}
+  \item{gstar}{A single vector to estimate the likelihood for.}
   \item{tau}{A single value used in estimating the likelihood.}
+  \item{g}{Deprecated. Replaced with gstar for clarity.}
 }
 
 \value{The log-likelihood value of the data.}
