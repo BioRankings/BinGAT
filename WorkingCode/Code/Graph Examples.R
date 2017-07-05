@@ -132,7 +132,7 @@ testGoF.Test <- function(){
 
 getGibbsMixture.Test <- function(){
 	data(braingraphs)
-
+	
 	braingm <- getGibbsMixture(braingraphs, "adjMatrix", 5) 
 }
 
@@ -195,17 +195,46 @@ plotHeatmap.Test <- function(){
 ### ~~~~~~~~~~~~~~~~~~~~~
 ### other functions
 ### ~~~~~~~~~~~~~~~~~~~~~
-gaConsensus.Test <- function(){
-	data(braingraphs)
-	
-	grps <- c(rep(0, 19), rep(1, 19))
-	iters <- 10 ### This is set low for speed
-	nRuns <- 5 ### This is set low for speed
-	
-	consensus <- gaConsensus(braingraphs, grps, iters, nRuns) 
-	consensus$corr[1:5]
-	consensus$solutions[1:2,]
+genAlgConsensus.Test <- function(){
+	\dontrun{
+		data(braingraphs)
+		
+		### Set covars to just be group membership
+		covars <- matrix(c(rep(0, 19), rep(1, 19)))
+		
+		### We use low numbers for speed. The exact numbers to use depend
+		### on the data being used, but generally the higher iters and popSize 
+		### the longer it will take to run.  earlyStop is then used to stop the
+		### run early if the results aren't improving.
+		iters <- 500
+		popSize <- 200
+		earlyStop <- 250
+		numRuns <- 3
+		
+		gaRes <- genAlgConsensus(braingraphs, covars, .5, numRuns, FALSE, 3, 
+				iters, popSize, earlyStop)
+	}
 }
-	
-	
-	
+
+genAlg.Test <- function(){
+	\dontrun{
+		data(braingraphs)
+		
+		### Set covars to just be group membership
+		covars <- matrix(c(rep(0, 19), rep(1, 19)))
+		
+		### We use low numbers for speed. The exact numbers to use depend
+		### on the data being used, but generally the higher iters and popSize 
+		### the longer it will take to run.  earlyStop is then used to stop the
+		### run early if the results aren't improving.
+		iters <- 500
+		popSize <- 200
+		earlyStop <- 250
+		
+		gaRes <- genAlg(braingraphs, covars, iters, popSize, earlyStop)
+	}
+}
+
+
+
+

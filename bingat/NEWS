@@ -2,7 +2,13 @@ CHANGES IN bingat VERSION 1.3
 
 CHANGES
 
+* Tidied up every function's code, comments, and variable names
+
+* Several function parameter names were changed.  The old names remain to support backwards compatibility.
+
 * Added as.vector to the ga function -- update this later
+
+* Changed pvalue calculations to include +1/+1 so it never is 0
 
 
 

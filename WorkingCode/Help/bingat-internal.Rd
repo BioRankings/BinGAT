@@ -7,6 +7,9 @@
 \alias{vec2mat}
 \alias{glrtReg}
 \alias{glmReg}
+\alias{gaScoring}
+\alias{gaCreation}
+\alias{gaPlot}
 
 \title{Internal Functions}
 \description{These files are only called from inside other functions and are therefore not documented here.}

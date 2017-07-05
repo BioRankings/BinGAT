@@ -5,7 +5,8 @@
 \description{This function plots all the data on an MDS plot.}
 
 \usage{
-	plotMDS(dataList, groups, estGstar = TRUE, paired = FALSE, returnCoords = FALSE, ..., data=NULL)
+	plotMDS(dataList, groups, estGstar = TRUE, paired = FALSE, 
+		returnCoords = FALSE, ..., data=NULL)
 }
 
 \arguments{

@@ -1,95 +1,90 @@
 getGibbsMixture <-
 function(data, type, desiredGroups, maxIter=50, digits=3){ 
-if(missing(data) || missing(desiredGroups) || missing(type))
-stop("data, type, and/or desiredGroups is missing.")
-
-if(maxIter <= 0)
-stop("maxIter must be an integer greater than 0.")
-
-nodes <- getNumNodes(data, type)
-edges <- getNumEdges(nodes, type)
-groups <- sample(1:desiredGroups, ncol(data), replace=TRUE)
-
-gstars <- list()
-weights <- NULL
-taus <- NULL
-
-gcheck <- 0
-tcheck <- 0
-wcheck <- 1
-group <- NULL
-converge <- NA
-
-#Find the starting gstars/tau/weights for the given groups
-for(j in 1:desiredGroups){
-weights[j] <- sum(groups==j) / length(groups)
-gstars[[j]] <- estGStar(data[, groups==j, drop=FALSE]) 
-taus[j] <- estTau(data[, groups==j, drop=FALSE], type, gstars[[j]])
-}
-
-for(iter in 1:maxIter){
-#Calculate distances to the gstars
-distances <- matrix(NA, ncol(data), desiredGroups)
-for(j in 1:desiredGroups)
-distances[,j] <- apply(data, 2, function(x){calcDistance(x, gstars[[j]], type)})
-
-t <- matrix(NA, ncol(data), desiredGroups)
-pij <- matrix(NA, ncol(data), desiredGroups)
-for(i in 1:ncol(data)){
-for(j in 1:desiredGroups)
-t[i, j] <- -edges*log(1 + exp(-taus[j])) - taus[j]*distances[i, j] + log(weights[j])
-for(j in 1:desiredGroups)
-pij[i, j] <- 1/sum(exp(t[i,] - t[i, j]))
-}
-
-#Check for covergence and quit if true
-if(gcheck + tcheck + wcheck == 0){
-for(i in 1:ncol(data))
-group <- c(group, which(pij[i,] == max(pij[i,])))
-
-converge <- TRUE
-break
-}
-
-#Recompute gstars/taus/weights for new groups
-gstars2 <- list()
-weights2 <- NULL
-taus2 <- NULL
-for(j in 1:desiredGroups){
-weights2[j] <- sum(pij[,j]) / ncol(data)
-gnum <- apply(t(data)*pij[,j], 2, sum)
-gdem <- sum(pij[,j])
-gstars2[[j]] <- ifelse(gnum/gdem > .5, 1, 0)  
-distj <- apply(data, 2, function(x){calcDistance(x, gstars2[[j]], type)})
-
-tnum <- sum(pij[,j] * distj)
-tdem <- sum(pij[,j] * edges) - tnum
-tfrac <- tnum/tdem
-tfrac <- ifelse(tfrac==0, .Machine$double.xmin, tfrac)
-
-taus2[j] <- -log(tfrac) 
-}
-
-#Recalculate the checks for convergence
-gcheck <- 0
-tcheck <- 0
-wcheck <- 0
-for(j in 1:desiredGroups){
-gcheck <- gcheck + sum(gstars[[j]] != gstars2[[j]])
-tcheck <- tcheck + as.numeric(round(taus[j], digits) != round(taus2[j], digits))
-wcheck <- wcheck + as.numeric(round(weights[j], digits) != round(weights2[j], digits))
-}
-
-if(iter == maxIter){
-warning(sprintf("EM algorithm did not converge on %s groups with %s iterations", as.character(desiredGroups), as.character(maxIter)))
-converge <- FALSE
-}
-
-gstars <- gstars2
-taus <- taus2
-weights <- weights2
-}
-
-return(list(weights=weights2, gstars=gstars2, taus=taus2, converge=converge, 
-iterations=iter, numgroups=desiredGroups, type=type, pij=pij, group=group))
+	if(missing(data) || missing(desiredGroups) || missing(type))
+		stop("data, type, and/or desiredGroups is missing.")
+	
+	if(maxIter <= 0)
+		stop("maxIter must be an integer greater than 0.")
+	
+	nodes <- getNumNodes(data, type)
+	edges <- getNumEdges(nodes, type)
+	numSub <- ncol(data)
+	
+	# Set our starting points for gstars/weights/taus
+	gstarsNew <- matrix(0, nrow(data), desiredGroups)
+	weightsNew <- rep(0, desiredGroups)
+	tausNew <- rep(0, desiredGroups)
+	
+	# Set our starting points for several checks
+	gcheck <- FALSE
+	tcheck <- FALSE
+	wcheck <- FALSE
+	converge <- FALSE
+	
+	# Randomly assign a starting group
+	groups <- sample(desiredGroups, numSub, replace=TRUE)
+	# Find the starting gstars/weights/taus for the given groups
+	for(j in 1:desiredGroups){
+		gstarsNew[,j] <- estGStar(data[, groups==j, drop=FALSE]) 
+		weightsNew[j] <- sum(groups==j) / length(groups)
+		tausNew[j] <- estTau(data[, groups==j, drop=FALSE], type, gstarsNew[,j])
+	}
+	
+	for(iter in 1:maxIter){
+		# Copy over our gstars/weights/taus
+		gstarsOld <- gstarsNew
+		weightsOld <- weightsNew
+		tausOld <- tausNew
+		
+		# Calculate distances to the gstars
+		distances <- matrix(NA, numSub, desiredGroups)
+		for(j in 1:desiredGroups)
+			distances[,j] <- apply(data, 2, function(x){calcDistance(x, gstarsNew[,j], type)})
+		
+		t <- matrix(NA, numSub, desiredGroups)
+		pij <- matrix(NA, numSub, desiredGroups)
+		for(i in 1:numSub){
+			for(j in 1:desiredGroups)
+				t[i, j] <- -edges*log(1 + exp(-tausNew[j])) - tausNew[j]*distances[i, j] + log(weightsNew[j])
+			for(j in 1:desiredGroups)
+				pij[i, j] <- 1/sum(exp(t[i,] - t[i, j]))
+		}	
+		
+		# Check for covergence and quit if true
+		if(gcheck && tcheck && wcheck){
+			for(i in 1:numSub)
+				groups[i] <- which(pij[i,] == max(pij[i,]))
+			
+			converge <- TRUE
+			break
+		}
+		
+		# Recompute gstars/weights/taus for new groups
+		for(j in 1:desiredGroups){
+			gnum <- apply(t(data) * pij[,j], 2, sum)
+			gdem <- sum(pij[,j])
+			gstarsNew[,j] <- ifelse(gnum/gdem > .5, 1, 0)  
+			distj <- apply(data, 2, function(x){calcDistance(x, gstarsNew[,j], type)})
+			
+			weightsNew[j] <- sum(pij[,j])/numSub
+			
+			tnum <- sum(pij[,j] * distj)
+			tdem <- sum(pij[,j] * edges) - tnum
+			tfrac <- tnum/tdem
+			tfrac <- ifelse(tfrac==0, .Machine$double.xmin, tfrac) # Adjust tfrac if it's 0
+			tausNew[j] <- -log(tfrac) 
+		}
+		
+		# Recalculate the checks for convergence
+		wcheck <- all(round(weightsOld, digits) == round(weightsNew, digits))
+		tcheck <- all(round(tausOld, digits) == round(tausNew, digits))
+		if(wcheck && tcheck) # Only check gstars is tau and weight match
+			gcheck <- all(gstarsOld == gstarsNew)
+	}
+	
+	if(iter == maxIter && !converge)
+		warning(sprintf("EM algorithm did not converge on %s groups with %s iterations", as.character(desiredGroups), as.character(maxIter)))
+	
+	return(list(weights=weightsNew, gstars=gstarsNew, taus=tausNew, converge=converge, 
+					iterations=iter, numgroups=desiredGroups, type=type, pij=pij, group=groups))
 }

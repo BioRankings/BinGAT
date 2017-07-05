@@ -1,67 +1,92 @@
 plotMDS <-
-function(data, groups, estGstar=TRUE, paired=FALSE, returnCoords=FALSE, ...){
-if(missing(data))
-stop("data is missing.")
-
-if(missing(groups))
-groups <- rep(1, ncol(data))
-
-if(length(groups) != ncol(data))
-stop("groups must be the same length as the data set.")
-
-if(min(groups) <= 0)
-groups <- groups - min(groups) + 1
-
-dlen <- ncol(data)
-uni <- unique(groups)
-mycol <- groups + 1
-mycex <- rep(1, length(groups))
-numcols <- max(length(uni), 2, max(mycol))
-
-if(paired){
-if(length(uni) != 2 || sum(groups==uni[1]) != sum(groups==uni[2]))
-stop("There must be exactly TWO groups of the same length when using paired==TRUE.")
-groupSize <- ncol(data)/2
-}
-
-if(estGstar){
-gss <- NULL
-if(length(uni) > 1){
-for(i in 1:length(uni)){
-if(sum(groups==uni[i]) == 1)
-next
-gss <- cbind(gss, estGStar(data[,groups==uni[i]]))
-colnames(gss)[ncol(gss)] <- paste("Group", i, "Gstar")
-mycol <- c(mycol, max(mycol)+1)
-}
-}
-gss <- cbind(gss, estGStar(data))
-numcols <- numcols + ncol(gss)
-colnames(gss)[ncol(gss)] <- paste("Combined Gstar")
-mycol <- c(mycol, 1)
-mycex <- c(mycex, rep(1.5, ncol(gss)))
-data <- cbind(data, gss)
-}
-palette(c("black", rainbow(numcols)))
-
-loc <- cmdscale(dist(t(data), method="binary"), k=2) 
-plot(loc, xlab="MDS 1", ylab="MDS 2", pch=16, col=mycol, cex=mycex, ...)
-
-if(paired){
-for(i in 1:groupSize)
-segments(loc[i,1], loc[i,2], loc[i+groupSize,1], loc[i+groupSize,2], lty=3)
-
-if(estGstar)
-segments(loc[groupSize*2+1,1], loc[groupSize*2+1,2], loc[groupSize*2+2,1], loc[groupSize*2+2,2], lty=3) 
-}
-
-if(estGstar){
-ptr <- nrow(loc) - ncol(gss)
-for(i in 1:ncol(gss)){
-text(loc[ptr+i,1], loc[ptr+i,2], rownames(loc)[ptr+i], pos=3)
-}
-}
-
-if(returnCoords)
-return(loc)
+function(dataList, groups, estGstar=TRUE, paired=FALSE, returnCoords=FALSE, ..., data=NULL){
+	# Check if data is still being used
+	if(!is.null(data)){
+		warning("'data' is deprecated. It has been replaced with dataList. View the help files for details.")
+		dataList <- data
+	}
+	
+	if(missing(dataList))
+		stop("dataList is missing.")
+	
+	# Check if data/dataList isn't a list
+	if(class(dataList) != "list"){
+		warning("'dataList' should be a list. View the help files for details.")
+		if(missing(groups))
+			stop("groups is missing.")
+		
+		# Turn the data sets into a list
+		uniGroups <- unique(groups)
+		dataTemp <- vector("list", length(uniGroups))
+		for(i in 1:length(uniGroups))
+			dataTemp[[i]] <- dataList[,groups == uniGroups[i], drop=FALSE]
+		
+		dataList <- dataTemp
+	}
+	
+	# Get some variables
+	numSubGrps <- sapply(dataList, ncol)
+	numSub <- sum(numSubGrps)
+	numGrps <- length(dataList)
+	
+	# Turn the data into a single data frame
+	data <- do.call("cbind", dataList)
+	
+	# Make sure we have group names
+	if(is.null(names(dataList))){
+		grpNames <- paste("Data Set", 1:numGrps)
+	}else{
+		grpNames <- names(dataList)
+	}
+	
+	# Check if we have paired data
+	if(paired){
+		if(numGrps != 2)
+			stop("There must be exactly two data sets when paired = TRUE.")
+		if(numSubGrps[1] != numSubGrps[2])
+			stop("Both data sets must have the same number of subjects when paired = TRUE.")
+	}
+	
+	# Set up the colors and sizes to use
+	if(length(palette()) < numGrps)
+		grDevices::palette(grDevices::rainbow(numGrps))
+	myColors <- NULL
+	for(i in 1:numGrps)
+		myColors <- c(myColors, rep(i, numSubGrps[i]))
+	myCexs <- rep(1, length(myColors))
+	myPch <- rep(16, length(myColors))
+	
+	# Check if we need to calculate gstars
+	if(estGstar){
+		gstars <- matrix(0, nrow(dataList[[1]]), numGrps)
+		for(i in 1:numGrps)
+			gstars[,i] <- estGStar(dataList[[i]])
+		colnames(gstars) <- grpNames
+		
+		data <- cbind(data, gstars)
+		myColors <- c(myColors, grDevices::palette()[1:numGrps])
+		myCexs <- c(myCexs, rep(1.5, numGrps))
+		myPch <- c(myPch, rep(17, numGrps))
+	}
+	
+	# Plot the mds
+	loc <- cmdscale(dist(t(data), method="binary")) 
+	plot(loc, xlab="MDS 1", ylab="MDS 2", pch=myPch, col=myColors, cex=myCexs, ...)
+	
+	# Add connecting lines if paired
+	if(paired){
+		groupSize <- numSubGrps[1]
+		for(i in 1:groupSize)						
+			segments(loc[i, 1], loc[i, 2], loc[i+groupSize, 1], loc[i+groupSize, 2], lty=3)
+		
+		if(estGstar)
+			segments(loc[numSub+1, 1], loc[numSub+1, 2], loc[numSub+2, 1], loc[numSub+2, 2], lty=3) 	
+	}
+	
+	# Label gstars
+	if(estGstar)
+		text(loc[(numSub+1):nrow(loc), 1], loc[(numSub+1):nrow(loc), 2], grpNames, pos=3)
+	
+	if(returnCoords)
+		return(loc)
 }

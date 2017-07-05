@@ -4,7 +4,10 @@
 
 \description{This function returns the p-value of the significance of the difference in g-star values for paired data.}
 
-\usage{pairedPvalue(dataList, type, groups, numPerms = 10, parallel = FALSE, cores = 3, data = NULL)}
+\usage{
+	pairedPvalue(dataList, type, groups, numPerms = 10, parallel = FALSE, 
+		cores = 3, data = NULL)
+}
 
 \arguments{
   \item{dataList}{A list where each element is a data frame in which the columns (subjects) 

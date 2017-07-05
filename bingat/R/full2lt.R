@@ -1,8 +1,9 @@
 full2lt <-
 function(x){
-nn <- getNumNodes(x, type="adjmatrix")
-y <- matrix(x, nn, nn, byrow=FALSE)
-y <- y[lower.tri(y)] 
-
-return(as.vector(y))
+	nodes <- getNumNodes(x, type="adjmatrix")
+	
+	y <- matrix(x, nodes, nodes, byrow=FALSE)
+	y <- y[lower.tri(y)] 
+	
+	return(as.vector(y))
 }

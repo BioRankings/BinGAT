@@ -9,8 +9,8 @@
 library(network) 		# graphnetworkplot
 library(matrixStats) 	# mixture models - logSumExp
 library(gplots) 		# heatmap plotting
-library(genalg)			# ga algorithim
 library(doParallel)		# paralleling
+library(vegan)			# ga calcs
 
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -21,17 +21,17 @@ library(doParallel)		# paralleling
 ### pvalue functions
 ### ~~~~~~~~~~~~~~~~~~~~~
 glrtPvalue <- function(dataList, type, groups, numPerms=10, parallel=FALSE, cores=3, data=NULL){
-	if((missing(dataList) && is.null(data)) || missing(type))
-		stop("dataList, and/or type is missing.")
-	
-	if(numPerms <= 0)
-		stop("The number of permutations must be an integer greater than 0.")
-	
 	# Check if data is still being used
-	if(!is.null(data) && missing(dataList)){
+	if(!is.null(data)){
 		warning("'data' is deprecated. It has been replaced with dataList. View the help files for details.")
 		dataList <- data
 	}
+	
+	if(missing(dataList) || missing(type))
+		stop("dataList and/or type is missing.")
+	
+	if(numPerms <= 0)
+		stop("The number of permutations must be an integer greater than 0.")
 	
 	# Check if data/dataList isn't a list
 	if(class(dataList) != "list"){
@@ -71,8 +71,7 @@ glrtPvalue <- function(dataList, type, groups, numPerms=10, parallel=FALSE, core
 						return(glrt)
 					}
 				}, finally = {
-					# Close the parallel connections
-					parallel::stopCluster(cl)
+					parallel::stopCluster(cl) # Close the parallel connections
 				}
 		)
 	}else{
@@ -96,17 +95,17 @@ glrtPvalue <- function(dataList, type, groups, numPerms=10, parallel=FALSE, core
 }
 
 pairedPvalue  <- function(dataList, type, groups, numPerms=10, parallel=FALSE, cores=3, data=NULL){	
-	if((missing(dataList) && is.null(data)) || missing(type))
-		stop("dataList, and/or type is missing.")
-	
-	if(numPerms <= 0)
-		stop("The number of permutations must be an integer greater than 0.")
-	
 	# Check if data is still being used
-	if(!is.null(data) && missing(dataList)){
+	if(!is.null(data)){
 		warning("'data' is deprecated. It has been replaced with dataList. View the help files for details.")
 		dataList <- data
 	}
+	
+	if(missing(dataList) || missing(type))
+		stop("dataList and/or type is missing.")
+	
+	if(numPerms <= 0)
+		stop("The number of permutations must be an integer greater than 0.")
 	
 	# Check if data/dataList isn't a list
 	if(class(dataList) != "list"){
@@ -145,14 +144,13 @@ pairedPvalue  <- function(dataList, type, groups, numPerms=10, parallel=FALSE, c
 						samps <- samps*numSub + 1:numSub
 						
 						gstar1 <- estGStar(dataComb[,samps, drop=FALSE])
-						gstar2 <- estGStar(dataComb[,-samps], drop=FALSE)
+						gstar2 <- estGStar(dataComb[,-samps, drop=FALSE])
 						
 						newDist <- calcDistance(gstar1, gstar2, type)
 						return(newDist)
 					}	
 				}, finally = {
-					# Close the parallel connections
-					parallel::stopCluster(cl)
+					parallel::stopCluster(cl) # Close the parallel connections
 				}
 		)
 	}else{
@@ -163,7 +161,7 @@ pairedPvalue  <- function(dataList, type, groups, numPerms=10, parallel=FALSE, c
 			samps <- samps*numSub + 1:numSub
 			
 			gstar1 <- estGStar(dataComb[,samps, drop=FALSE])
-			gstar2 <- estGStar(dataComb[,-samps], drop=FALSE)
+			gstar2 <- estGStar(dataComb[,-samps, drop=FALSE])
 			
 			permDistances[i] <- calcDistance(gstar1, gstar2, type)
 		}
@@ -175,17 +173,17 @@ pairedPvalue  <- function(dataList, type, groups, numPerms=10, parallel=FALSE, c
 }
 
 lrtPvalue <- function(dataList, type, groups, numPerms=10, parallel=FALSE, cores=3, data=NULL){
-	if((missing(dataList) && is.null(data)) || missing(type))
-		stop("dataList, and/or type is missing.")
-	
-	if(numPerms <= 0)
-		stop("The number of permutations must be an integer greater than 0.")
-	
 	# Check if data is still being used
-	if(!is.null(data) && missing(dataList)){
+	if(!is.null(data)){
 		warning("'data' is deprecated. It has been replaced with dataList. View the help files for details.")
 		dataList <- data
 	}
+	
+	if(missing(dataList) || missing(type))
+		stop("dataList and/or type is missing.")
+	
+	if(numPerms <= 0)
+		stop("The number of permutations must be an integer greater than 0.")
 	
 	# Check if data/dataList isn't a list
 	if(class(dataList) != "list"){
@@ -233,8 +231,7 @@ lrtPvalue <- function(dataList, type, groups, numPerms=10, parallel=FALSE, cores
 						return(lrt)
 					}
 				}, finally = {
-					# Close the parallel connections
-					parallel::stopCluster(cl)
+					parallel::stopCluster(cl) # Close the parallel connections
 				}
 		)
 	}else{
@@ -358,7 +355,7 @@ estLogLik <- function(data, type, gstar, tau, g=NULL){
 		stop("data and/or type  is missing.")
 	
 	# Check if g is still used
-	if(!is.null(g) && missing(gstar)){
+	if(!is.null(g)){
 		warning("'g' is deprecated. It has been replaced with gstar. View the help files for details.")
 		gstar <- g
 	}
@@ -558,7 +555,7 @@ getGibbsMixture <- function(data, type, desiredGroups, maxIter=50, digits=3){
 	
 	# Set our starting points for gstars/weights/taus
 	gstarsNew <- matrix(0, nrow(data), desiredGroups)
-	weightNew <- rep(0, desiredGroups)
+	weightsNew <- rep(0, desiredGroups)
 	tausNew <- rep(0, desiredGroups)
 	
 	# Set our starting points for several checks
@@ -612,7 +609,7 @@ getGibbsMixture <- function(data, type, desiredGroups, maxIter=50, digits=3){
 			gstarsNew[,j] <- ifelse(gnum/gdem > .5, 1, 0)  
 			distj <- apply(data, 2, function(x){calcDistance(x, gstarsNew[,j], type)})
 			
-			weightNew[j] <- sum(pij[,j])/numSub
+			weightsNew[j] <- sum(pij[,j])/numSub
 			
 			tnum <- sum(pij[,j] * distj)
 			tdem <- sum(pij[,j] * edges) - tnum
@@ -631,7 +628,7 @@ getGibbsMixture <- function(data, type, desiredGroups, maxIter=50, digits=3){
 	if(iter == maxIter && !converge)
 		warning(sprintf("EM algorithm did not converge on %s groups with %s iterations", as.character(desiredGroups), as.character(maxIter)))
 	
-	return(list(weights=weightNew, gstars=gstarsNew, taus=tausNew, converge=converge, 
+	return(list(weights=weightsNew, gstars=gstarsNew, taus=tausNew, converge=converge, 
 					iterations=iter, numgroups=desiredGroups, type=type, pij=pij, group=groups))
 }
 
@@ -776,14 +773,14 @@ graphNetworkPlot <- function(data, type, main="Network Plot", labels, groupCount
 }
 
 plotMDS <- function(dataList, groups, estGstar=TRUE, paired=FALSE, returnCoords=FALSE, ..., data=NULL){
-	if((missing(dataList) && is.null(data)))
-		stop("dataList is missing.")
-	
 	# Check if data is still being used
-	if(!is.null(data) && missing(dataList)){
+	if(!is.null(data)){
 		warning("'data' is deprecated. It has been replaced with dataList. View the help files for details.")
 		dataList <- data
 	}
+	
+	if(missing(dataList))
+		stop("dataList is missing.")
 	
 	# Check if data/dataList isn't a list
 	if(class(dataList) != "list"){
@@ -893,74 +890,198 @@ plotHeatmap <- function(data, type, names, ...){
 ### ~~~~~~~~~~~~~~~~~~~~~
 ### other functions
 ### ~~~~~~~~~~~~~~~~~~~~~
-gaConsensus <- function(data, groups, iters=10, nRuns=1, popSize=200, method="manhattan", parallel=FALSE, cores=3){
-	if(missing(data) || missing(groups))
-		stop("data and/or groups is missing.")
+genAlg <- function(data, covars, iters=50, popSize=200, earlyStop=0, dataDist="manhattan", covarDist="gower", 
+		verbose=FALSE, plot=TRUE, minSolLen=NULL, maxSolLen=NULL){
+	if(missing(data) || missing(covars))
+		stop("data and/or covars are missing.")
 	
-	if(length(unique(groups)) != 2)
-		stop("There must be exactly two groups.")
+	# Check for any bad numbers
+	if(iters <= 0)
+		stop("iters must be an integer greater than 0")
+	if(popSize <= 0)
+		stop("popSize must be an integer greater than 0")
+	if(earlyStop < 0)
+		stop("earlyStop must be an integer greater than or equal to 0")
 	
-	### Get our groups in the right order
-	x1 <- sum(groups==unique(groups)[1])
-	x2 <- sum(groups==unique(groups)[2])
-	if(x1 <= 0 || x2 <= 0)
-		stop("Each group must have at least 1 subject.")
+	# Check distances
+	if(dataDist != "manhattan")
+		stop("data.dist must be manhattan.")
+	if(covarDist != "euclidean" && covarDist != "gower")
+		stop("covars.dist must be euclidean or gower.")
 	
-	grp1 <- data[,groups==unique(groups)[1]]
-	grp2 <- data[,groups==unique(groups)[2]]
-	groupSize1 <- ncol(grp1)
-	groupSize2 <- ncol(grp2)
-	data <- cbind(grp1, grp2)
+	# Define size
+	size <- nrow(data)
 	
-	### Set up our function for the GA
-	b <- dist(c(rep(0, groupSize1), rep(1, groupSize2)), method)
-	myScore <- function(indices) {
-		if(sum(indices) == 0)
-			return(0)
-		edges <- which(indices==1)
-		
-		a <- Reduce("+", dists[edges])
-		mycor <- cor(a, b)
-		return(-mycor)
+	# Not ready for use yet
+	penalty <- FALSE
+	
+	# Check stopping rules
+	if(!is.null(minSolLen))
+		if(minSolLen < 0 || minSolLen >= size)
+			stop("minSolLen must be 0 or greater and less than the number of columns in data.")
+	if(!is.null(maxSolLen))
+		if(maxSolLen <= 0 || maxSolLen > size)
+			stop("maxSolLen must be greater than 0 and less than or equal to the number columns in data.")
+	if(!is.null(maxSolLen) && !is.null(minSolLen))
+		if(maxSolLen < minSolLen)
+			stop("maxSolLen must be bigger than minSolLen.")
+	
+	# Rotate the data
+	data <- t(data)
+	
+	# Define some variables for use in the GA loop
+	mutationChance <- 1/(size+1)
+	elitism <- floor(popSize/5)
+	evalSumm <- matrix(NA, iters, 6)
+	newPopSize <- popSize - elitism
+	newPopulation <- matrix(NA, newPopSize, size)
+	parentProb <- stats::dnorm(1:popSize, mean=0, sd=(popSize/3))
+	
+	if(verbose){
+		print("X. Current Step : Current Time Taken")
+		runningTime <- proc.time()
+		print(paste("1. Calculating Distances:", round((proc.time() - runningTime)[3], 3)))
 	}
 	
-	### Precompute all our distances
-	dists <- vector("list", nrow(data))
-	for(i in 1:nrow(data))
-		dists[[i]] <- dist(as.vector(t(data[i,])), method)
+	# Set up our base distance matrix
+	covarDists <- vegan::vegdist(covars, covarDist)
 	
-	### Run the GA
+	# Get each columns distance contribution
+	colDists <- vector("list", ncol(data))
+	for(i in 1:ncol(data))
+		colDists[[i]] <- vegan::vegdist(data[,i], dataDist)
+	
+	if(verbose)
+		print(paste("2. Creating Starting Data:", round((proc.time() - runningTime)[3], 3)))
+	
+	# Create our starting data
+	population <- gaCreation(data, popSize)
+	
+	if(verbose)
+		print(paste("3. Scoring Starting Data:", round((proc.time() - runningTime)[3], 3)))
+	
+	# Score and sort
+	evalVals <- rep(NA, popSize)
+	for(e in 1:popSize)
+		evalVals[e] <- gaScoring(population[e,], covarDists, colDists, dataDist, penalty, minSolLen, maxSolLen)
+	population <- population[order(evalVals, decreasing=TRUE),]
+	bestScoreValue <- max(evalVals)
+	bestScoreCounter <- 0
+	
+	if(verbose)
+		print(paste("4. Running Iterations:", round((proc.time() - runningTime)[3], 3)))
+	
+	# Run GA
+	ptr <- proc.time()
+	for(i in 1:iters){
+		if(verbose){
+			if(i %% round(iters/10) == 0)
+				print(paste("Iteration - ", i, ": ", round((proc.time() - runningTime)[3], 3), sep=""))
+		}
+		# Cross over to fill rest of new population
+		for(child in 1:newPopSize){
+			parentIDs <- sample(1:popSize, 2, prob=parentProb)
+			parents <- population[parentIDs,]
+			crossOverPoint <- sample(0:size, 1)
+			if(crossOverPoint == 0){
+				newPopulation[child,] <- parents[2,]
+			}else if(crossOverPoint == size){
+				newPopulation[child,] <- parents[1,]
+			}else{
+				newPopulation[child,] <- c(parents[1,][1:crossOverPoint], parents[2,][(crossOverPoint+1):size])
+			}
+		}
+		
+		# Mutate all but elite
+		if(mutationChance > 0){
+			population[(elitism+1):popSize,] <- apply(newPopulation, 2, function(x){ifelse(stats::runif(newPopSize) < mutationChance, 1-x, x)})
+		}else{
+			population[(elitism+1):popSize,] <- newPopulation
+		}
+		
+		# Score and sort our new solutions
+		for(e in 1:popSize)
+			evalVals[e] <- gaScoring(population[e,], covarDists, colDists, dataDist, penalty, minSolLen, maxSolLen)
+		population <- population[order(evalVals, decreasing=TRUE),]
+		evalSumm[i,] <- summary(evalVals)
+		
+		# Check if we want to stop early
+		if(bestScoreValue == max(evalVals)){
+			bestScoreCounter <- bestScoreCounter + 1
+		}else{
+			bestScoreCounter <- 0
+			bestScoreValue <- max(evalVals)
+		}
+		
+		if(bestScoreCounter == earlyStop && earlyStop != 0)
+			break
+	}	
+	gaTime <- (proc.time() - ptr)[3]
+	
+	if(verbose)
+		print(paste("5. Prettying Results", round((proc.time() - runningTime)[3], 3)))
+	
+	# Pretty up our data for returning
+	rownames(population) <- paste("Solution", 1:nrow(population))
+	colnames(population) <- colnames(data)
+	rownames(evalSumm) <- paste("Iteration", 1:nrow(evalSumm))
+	colnames(evalSumm) <- c("Best", "25%ile", "Median", "Mean", "75%ile", "Worst")
+	
+	evalVals <- matrix(evalVals[order(evalVals, decreasing=TRUE)], 1, length(evalVals))
+	colnames(evalVals) <- paste("Solution ", 1:length(evalVals))
+	rownames(evalVals) <- "Score"
+	
+	# Get selected columns using a consensus
+	selIndex <- which(population[1,] == 1)
+	sel <- colnames(data)[selIndex]
+	
+	# Get the nonselected columns
+	nonSel <- colnames(data)[-selIndex]
+	
+	# Plot scoring summary
+	if(plot)
+		gaPlot(evalSumm)
+	
+	return(list(scoreSumm=evalSumm, solutions=population, scores=evalVals, time=gaTime, selected=sel, nonSelected=nonSel, selectedIndex=selIndex))
+}
+
+genAlgConsensus <- function(data, covars, consensus=.5, numRuns=10, parallel=FALSE, cores=3, ...){
+	if(missing(data) || missing(covars))
+		stop("data and/or covars are missing.")
+	
+	if(consensus <= 0 || consensus > 1)
+		stop("consensus must be greater than 0 and equal or less than 1")
+	
+	# Run the GA X times
 	if(parallel){
-		cl <- parallel::makeCluster(cores) 
+		cl <- parallel::makeCluster(min(cores, numRuns)) 
 		doParallel::registerDoParallel(cl)
+		
 		tryCatch({
-					res <- foreach::foreach(i=1:nRuns, .combine=rbind, .inorder=FALSE, .multicombine=TRUE, .packages=c("genalg")) %dopar%{
-						tempGa <- genalg::rbga.bin(size=nrow(data), iters=iters, popSize=popSize, evalFunc=myScore, verbose=TRUE)
-						return(tempGa$population[which(tempGa$evaluation==min(tempGa$evaluation)),])
+					gaRes <- foreach::foreach(i=1:numRuns, .combine=list, .multicombine=TRUE, .inorder=FALSE, .packages=c("vegan", "HMP")) %dopar%{
+						tempResults <- genAlg(data, covars, plot=FALSE, verbose=FALSE, ...)
+						return(tempResults)
 					}
 				}, finally = {
-					# Close the parallel connections
-					parallel::stopCluster(cl)
+					parallel::stopCluster(cl) # Close the parallel connections
 				}
 		)
 	}else{
-		res <- NULL
-		for(i in 1:nRuns){
-			tempGa <- genalg::rbga.bin(size=nrow(data), iters=iters, popSize=popSize, evalFunc=myScore, verbose=TRUE)	
-			res <- rbind(res, tempGa$population[which(tempGa$evaluation==min(tempGa$evaluation)),])
-		}
+		gaRes <- vector("list", numRuns)
+		for(i in 1:numRuns)
+			gaRes[[i]] <- genAlg(data, covars, plot=FALSE, verbose=FALSE, ...)
 	}
 	
-	### Clean up our results
-	res <- t(res)
-	res <- res[,!duplicated(t(res)), drop=FALSE]
-	corrs <- apply(res, 2, myScore)
-	res <- res[,order(corrs), drop=FALSE]
+	# Get all the best solutions
+	bestSols <- sapply(gaRes, function(x){x$solutions[1,]})
 	
-	colnames(res) <- paste("Solution", 1:ncol(res))
-	corrs <- corrs[order(corrs)] * -1
+	# Get the consensus solution vector
+	consSol <- (rowSums(bestSols) >= (numRuns * consensus)) * 1
 	
-	return(list(solutions=res, corrs=corrs))
+	# Get the selected Index's
+	selInd <- which(consSol == 1)
+	
+	return(list(solutions=bestSols, consSol=consSol, selectedIndex=selInd))
 }
 
 
@@ -1017,8 +1138,82 @@ glrtReg <- function(data, type, groups){
 
 
 
+### ~~~~~~~~~~~~~~~~~~~~~
+### ga functions
+### ~~~~~~~~~~~~~~~~~~~~~
+gaConsensus <- function(data, groups, iters=10, nRuns=1, popSize=200, method="manhattan", parallel=FALSE, cores=3){
+	warning("This function has been deprecated.  Please use 'genAlg' or 'genAlgConsensus' instead.")
+	ga <- genAlgConsensus(data, groups, .5, nRuns, parallel, cores, iters=iters, popSize=popSize, dataDist=method)
+	return(ga)
+}
 
+gaScoring <- function(indices, covarDists, colDists, distType, penalty, minSolLen, maxSolLen) {
+	BAD_RETURN <- -2 # Return worse than cor could do
+	
+	numSel <- sum(indices)
+	
+	# Check if nothing is selected
+	if(numSel == 0) 
+		return(BAD_RETURN) 
+	# Check if we dont have enough selected
+	if(!is.null(minSolLen)) 
+		if(numSel < minSolLen)
+			return(BAD_RETURN)
+	# Check if we dont have too many selected
+	if(!is.null(maxSolLen)) 
+		if(numSel > maxSolLen)
+			return(BAD_RETURN) 
+	
+	edges <- which(indices==1)
+	combinedSolDists <- Reduce("+", colDists[edges])
+	
+	# Get the correlation and penalize it based on the number of columns selected
+	mycor <- stats::cor(combinedSolDists, covarDists)
+	if(penalty)
+		mycor <- mycor * (length(indices)-sum(indices))/(length(indices)-1)
+	
+	return(mycor)
+}
 
+gaCreation <- function(data, popSize){
+	ZERO_TO_ONE_RATIO <- 10 # Ratio of 0 to 1s for the random data
+	SUGGESTION_COUNT <- 10 # Number starting points we should make from the data
+	
+	size <- ncol(data)
+	population <- matrix(NA, popSize, size)
+	
+	# Make 10 starting points as long as our popSize is > 10
+	if(popSize >= SUGGESTION_COUNT){
+		# Get a rough starting point
+		rstart <- apply(data, 2, mean)
+		
+		# Use the rough difference to make starting solutions
+		breaks <- seq(.05, 1, 1/SUGGESTION_COUNT)
+		suggestions <- matrix(0, length(breaks), length(rstart))
+		for(i in 1:length(breaks))
+			suggestions[i,] <- ifelse(rstart >= stats::quantile(rstart, breaks[i]), 1, 0)
+		
+		population[1:SUGGESTION_COUNT,] <- suggestions
+		numCreated <- SUGGESTION_COUNT
+	}else{
+		numCreated <- 0
+	}
+	
+	# Fill any remaining population spots with random solutions
+	if(popSize != SUGGESTION_COUNT){
+		for(child in (numCreated+1):popSize) 
+			population[child,] <- sample(c(rep(0, ZERO_TO_ONE_RATIO), 1), size, replace=TRUE)
+	}
+	
+	return(population)
+}
+
+gaPlot <- function(evalSumm){
+	graphics::plot(evalSumm[,4], type="l", ylab="Score", ylim=c(0, 1), lwd=2, main="Eval Scores by Iteration", xlab="Iteration")
+	graphics::lines(evalSumm[,6], col="red", lwd=2)
+	graphics::lines(evalSumm[,1], col="blue", lwd=2)
+	graphics::legend("topleft", colnames(evalSumm)[c(4, 6, 1)], pch=16, col=c("black", "red", "blue"))
+}
 
 
 
