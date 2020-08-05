@@ -22,8 +22,6 @@
 
 \value{A list containing the p-value, tau, logliklihood value, glrt value, bob1, b0, b1 and the hamming errors.}
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	

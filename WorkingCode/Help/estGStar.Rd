@@ -12,8 +12,6 @@
 
 \value{A single vector that is the gstar is returned.}
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 

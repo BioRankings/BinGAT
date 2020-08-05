@@ -19,8 +19,6 @@
 
 \value{A single number indicating the distance between the two input vectors.}
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	

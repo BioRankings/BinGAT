@@ -15,8 +15,6 @@
 
 \value{A data frame containing all the graphs generated.}
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	

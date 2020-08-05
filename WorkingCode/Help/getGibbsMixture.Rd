@@ -24,8 +24,6 @@
 	it took, and the group for each graph.
 }
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 

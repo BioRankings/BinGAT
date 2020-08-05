@@ -39,8 +39,6 @@
 	or set of covariates if you cannot run the GA long enough to get a final solution.
 }
 
-\author{Sharina Carter, Elena Deych, Berkley Shands, William D. Shannon}
-
 \examples{
 	\dontrun{
 		data(braingraphs)

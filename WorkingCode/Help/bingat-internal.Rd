@@ -14,6 +14,4 @@
 \title{Internal Functions}
 \description{These files are only called from inside other functions and are therefore not documented here.}
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \keyword{internal}

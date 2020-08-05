@@ -22,8 +22,6 @@
 
 \value{An MDS plot and if returnCoords is TRUE, a 2 column data frame containing the x-y coordinates of the data points is also returned.}
 
-\author{Berkley Shands, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	

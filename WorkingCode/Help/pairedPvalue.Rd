@@ -22,8 +22,6 @@
 
 \value{The p-value for the difference between the two groups being tested.}
 
-\author{Berkley Shands, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	

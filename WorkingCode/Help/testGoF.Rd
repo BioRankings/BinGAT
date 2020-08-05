@@ -20,8 +20,6 @@
 	statistics and p-value and finally the table with the observed and expected counts.
 }
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	

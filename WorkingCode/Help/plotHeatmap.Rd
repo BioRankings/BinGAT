@@ -15,8 +15,6 @@
 
 \value{A plot displaying the connections between the nodes as a heat map.}
 
-\author{Berkley Shands, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	

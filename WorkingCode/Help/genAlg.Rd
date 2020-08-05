@@ -61,8 +61,6 @@
 	The distance calculations use the vegdist package. \link[vegan]{vegdist}
 }
 
-\author{Sharina Carter, Elena Deych, Berkley Shands, William D. Shannon}
-
 \examples{
 	\dontrun{
 		data(braingraphs)

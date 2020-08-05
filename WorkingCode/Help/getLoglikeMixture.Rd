@@ -14,8 +14,6 @@
 
 \value{A list containing the BIC criteria and the log likelihood named bic and ll respectively.}
 
-\author{Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon}
-
 \examples{
 	data(braingraphs)
 	
