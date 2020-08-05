@@ -666,7 +666,6 @@ getLoglikeMixture <- function(data, mixture, numConst){
 }
 
 
-
 ### ~~~~~~~~~~~~~~~~~~~~~
 ### convert data functions
 ### ~~~~~~~~~~~~~~~~~~~~~
@@ -1214,6 +1213,89 @@ gaPlot <- function(evalSumm){
 	graphics::lines(evalSumm[,1], col="blue", lwd=2)
 	graphics::legend("topleft", colnames(evalSumm)[c(4, 6, 1)], pch=16, col=c("black", "red", "blue"))
 }
+
+
+
+### ~~~~~~~~~~~~~~~~~~~~~
+### other/new
+### ~~~~~~~~~~~~~~~~~~~~~
+getGibbsMixtureNew <- function(data, type, desiredGroups, maxIter=50, digits=3){ 
+	if(missing(data) || missing(desiredGroups) || missing(type))
+		stop("data, type, and/or desiredGroups is missing.")
+	
+	if(maxIter <= 0)
+		stop("maxIter must be an integer greater than 0.")
+	
+	nodes <- getNumNodes(data, type)
+	edges <- getNumEdges(nodes, type)
+	numSub <- ncol(data)
+	
+	# Set our starting points for gstars/weights/taus
+	gstarsNew <- matrix(0, nrow(data), desiredGroups)
+	weightsNew <- rep(0, desiredGroups)
+	tausNew <- rep(0, desiredGroups)
+	
+	# Set our starting points for several checks
+	gcheck <- FALSE
+	tcheck <- FALSE
+	wcheck <- FALSE
+	converge <- FALSE
+	
+	# Randomly assign a starting group
+	groups <- matrix(NA, numSub, maxIter+1)
+	newGroups <- sample(desiredGroups, numSub, replace=TRUE)
+	groups[,1] <- newGroups
+	# Find the starting gstars/weights/taus for the given groups
+	for(j in 1:desiredGroups){
+		gstarsNew[,j] <- estGStar(data[, newGroups == j, drop=FALSE]) 
+		weightsNew[j] <- sum(newGroups == j) / length(groups)
+		tausNew[j] <- estTau(data[, newGroups == j, drop=FALSE], type, gstarsNew[,j])
+	}
+	
+	for(iter in 1:maxIter){
+		# Copy over our gstars/weights/taus
+		gstarsOld <- gstarsNew
+		weightsOld <- weightsNew
+		tausOld <- tausNew
+		
+		# Calculate distances to the gstars
+		distances <- matrix(NA, numSub, desiredGroups)
+		for(j in 1:desiredGroups)
+			distances[,j] <- apply(data, 2, function(x){calcDistance(x, gstarsNew[,j], type)})
+		
+		t <- matrix(NA, numSub, desiredGroups)
+		pij <- matrix(NA, numSub, desiredGroups)
+		for(i in 1:numSub){
+			for(j in 1:desiredGroups)
+				t[i, j] <- -edges*log(1 + exp(-tausNew[j])) - tausNew[j]*distances[i, j] + log(weightsNew[j])
+			for(j in 1:desiredGroups)
+				pij[i, j] <- 1/sum(exp(t[i,] - t[i, j]))
+		}	
+		
+		newGroups <- apply(pij, 1, function(x) which(x == max(x)))
+		groups[,iter+1] <- newGroups
+		
+		# Recompute gstars/weights/taus for new groups
+		for(j in 1:desiredGroups){
+			gstarsNew[,j] <- estGStar(data[, newGroups == j, drop=FALSE]) 
+			weightsNew[j] <- sum(newGroups == j) / length(groups)
+			tausNew[j] <- estTau(data[, newGroups == j, drop=FALSE], type, gstarsNew[,j])
+		}
+		
+		# Check for covergence and quit if true
+		if(all(newGroups == groups[,iter])){
+			converge <- TRUE
+			break
+		}
+	}
+	
+	if(iter == maxIter && !converge)
+		warning(sprintf("EM algorithm did not converge on %s groups with %s iterations", as.character(desiredGroups), as.character(maxIter)))
+	
+	return(list(weights=weightsNew, gstars=gstarsNew, taus=tausNew, converge=converge, 
+					iterations=iter, numgroups=desiredGroups, type=type, pij=pij, group=groups))
+}
+
 
 
 
