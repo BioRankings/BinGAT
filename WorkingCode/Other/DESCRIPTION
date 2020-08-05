@@ -1,8 +1,8 @@
 Package: bingat
 Type: Package
 Title: Binary Graph Analysis Tools
-Version: 1.3
-Date: 2017-07-05
+Version: 1.4
+Date: 2018-10-31
 Author: Terrence Brooks, Berkley Shands, Skye Buckner-Petty, Patricio S. La Rosa, Elena Deych, William D. Shannon
 Maintainer: Berkley Shands <rpackages@biorankings.com>
 Depends: R (>= 3.1.0)
